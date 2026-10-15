@@ -1,0 +1,2 @@
+[console_scripts]
+klett = klett_classifier.cli:main
