@@ -1,8 +1,8 @@
-# KlettClassifier — secure EN/BG intent classification
+# Classifier — secure EN/BG intent classification
 
 **Python 3.13 · XLM-RoBERTa-base · FastAPI · auditable data split · tests**
 
-This repository implements the **Klett Bulgaria AI Software Developer exercise**: given a text query, assign exactly one of:
+This repository implements the ** Bulgaria AI Software Developer exercise**: given a text query, assign exactly one of:
 
 - `Технически проблем`
 - `Достъп или регистрация`
@@ -20,8 +20,8 @@ py -V:3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 .\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\klett.exe predict --backend rules --text "Видеоурокът по математика не се зарежда."
-.\.venv\Scripts\klett.exe interactive --backend rules
+.\.venv\Scripts\.exe predict --backend rules --text "Видеоурокът по математика не се зарежда."
+.\.venv\Scripts\.exe interactive --backend rules
 ```
 
 The CLI returns JSON with `category`, `confidence`, `scores`, and `method`. In rules mode `confidence` is `null` (not a probability). Empty or malformed text returns a clear error; the process exits nonzero for invalid one-shot input.
@@ -31,14 +31,14 @@ The CLI returns JSON with `category`, `confidence`, `scores`, and `method`. In r
 Set a **unique secret** (avoid saving it in source control):
 
 ```powershell
-$env:KLETT_API_KEY = .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(32))"
-.\.venv\Scripts\klett.exe serve --backend rules --host 127.0.0.1 --port 8000
+$env:_API_KEY = .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(32))"
+.\.venv\Scripts\.exe serve --backend rules --host 127.0.0.1 --port 8000
 ```
 
-In a *second* PowerShell terminal, set the **same** secret in `$env:KLETT_API_KEY` (environment values are per process), then:
+In a *second* PowerShell terminal, set the **same** secret in `$env:_API_KEY` (environment values are per process), then:
 
 ```powershell
-$headers = @{ Authorization = "Bearer $env:KLETT_API_KEY" }
+$headers = @{ Authorization = "Bearer $env:_API_KEY" }
 $body = @{ text = "Видеоурокът по математика не се зарежда." } | ConvertTo-Json
 Invoke-RestMethod -Uri http://127.0.0.1:8000/v1/predict -Method POST `
   -Headers $headers -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($body))
@@ -66,7 +66,7 @@ Full dataset workflow needs optional libraries including `hnswlib`, which may re
 .\.venv\Scripts\python.exe -m pip install -e ".[dev,data,leakage]"
 .\.venv\Scripts\python.exe .\datasets_processing\build_dataset.py --target-per-class 3500 --strict --output data\english_train_candidates.csv
 .\.venv\Scripts\python.exe .\datasets_processing\build_multilingual_dataset.py --english-input data\english_train_candidates.csv --output-dir data\multilingual
-.\.venv\Scripts\klett.exe split-data --data data\multilingual\multilingual_with_pair_ids.csv --output data\splits
+.\.venv\Scripts\.exe split-data --data data\multilingual\multilingual_with_pair_ids.csv --output data\splits
 ```
 
 The split uses provenance (`pair_id`, `source`, `family`), exact/lexical matches, and approximate multilingual semantic neighbors. If it discovers close texts with **different labels**, it **stops** and writes `data/splits/review_conflicts.json` for human review. Acknowledging genuinely different-intent contrasts is **not** a request to ignore them: approved pairs are always kept within the same split. For each genuinely intentional contrast copy only its `fingerprints` field into `approved.json` and add `"decision":"intentional_contrast"`:
@@ -78,10 +78,10 @@ The split uses provenance (`pair_id`, `source`, `family`), exact/lexical matches
 Replace the placeholders with the real 64-character hashes from `review_conflicts.json`, and rerun:
 
 ```powershell
-.\.venv\Scripts\klett.exe split-data --data data\multilingual\multilingual_with_pair_ids.csv --output data\splits --approved-review approved.json
-.\.venv\Scripts\klett.exe train --split-dir data\splits --output models\classifier-en-bg --epochs 5 --batch-size 8
-.\.venv\Scripts\klett.exe evaluate --data data\splits\test.csv --model models\classifier-en-bg --report models\classifier-en-bg\test_report.json
-.\.venv\Scripts\klett.exe interactive --model models\classifier-en-bg
+.\.venv\Scripts\.exe split-data --data data\multilingual\multilingual_with_pair_ids.csv --output data\splits --approved-review approved.json
+.\.venv\Scripts\.exe train --split-dir data\splits --output models\classifier-en-bg --epochs 5 --batch-size 8
+.\.venv\Scripts\.exe evaluate --data data\splits\test.csv --model models\classifier-en-bg --report models\classifier-en-bg\test_report.json
+.\.venv\Scripts\.exe interactive --model models\classifier-en-bg
 ```
 
 A *real* test set of original EN/BG customer queries, manually annotated and not generated from the same templates, is still necessary to establish generalization and any **Macro-F1 ≥ 0.95** claim. Neither a translated split nor an artificially template-heavy holdout is sufficient evidence. Detailed notes in [DATA.md](DATA.md).
@@ -100,7 +100,7 @@ need `hnswlib`, `sentence-transformers` or `datasketch` and does not download
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -e ".[dev,data]"
-.\.venv\Scripts\klett.exe split-data --data data\multilingual\multilingual_with_pair_ids.csv --output data\splits --provenance-only
+.\.venv\Scripts\.exe split-data --data data\multilingual\multilingual_with_pair_ids.csv --output data\splits --provenance-only
 ```
 
 This **still groups** `pair_id`, `source + family`, source record/conversation
@@ -113,7 +113,7 @@ slow embedding model:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install "datasketch>=1.6,<2"
-.\.venv\Scripts\klett.exe split-data --data data\multilingual\multilingual_with_pair_ids.csv --output data\splits --skip-semantic
+.\.venv\Scripts\.exe split-data --data data\multilingual\multilingual_with_pair_ids.csv --output data\splits --skip-semantic
 ```
 
 If the lexical pass itself makes a huge connected group, the command will now
@@ -128,11 +128,11 @@ semantic-audited F1 as if the evaluation protocols were equivalent.
 
 ## Security and operating constraints
 
-- API refuses to start without `KLETT_API_KEY` (minimum 24 characters), requires constant-time Bearer comparison, disables docs, and doesn't log query text in application code.
+- API refuses to start without `_API_KEY` (minimum 24 characters), requires constant-time Bearer comparison, disables docs, and doesn't log query text in application code.
 - Limits: 32 KiB HTTP body, 4,000 characters/query, max 32 items/batch, 60 requests/minute/client IP, and 2 concurrent inferences per process; JSON content-type required. Resource saturation gives 429/503.
 - Text is **data**, never executed, interpreted as instructions, or passed to a shell, database, or external tool. Unsupported controls and bidirectional overrides are rejected.
 - A trained model is loaded exclusively from **local safetensors** with `local_files_only=True`, `trust_remote_code=False`; missing/corrupt model prevents model backend startup rather than silently switching to rules.
-- Default HTTP binds only to `127.0.0.1`; public deployment requires a TLS reverse proxy, network controls, a gateway/centralized rate limiter, secrets management, `KLETT_ALLOW_REMOTE_BIND=true` and explicit `KLETT_ALLOWED_HOSTS`. In-process limiting is **not globally distributed**.
+- Default HTTP binds only to `127.0.0.1`; public deployment requires a TLS reverse proxy, network controls, a gateway/centralized rate limiter, secrets management, `_ALLOW_REMOTE_BIND=true` and explicit `_ALLOWED_HOSTS`. In-process limiting is **not globally distributed**.
 - Use a single service worker per GPU and monitor throughput/latency/OOM. Prefer application-level horizontal replication; a pod should restart on readiness failure.
 - The package ships **no model weights, private customer data, or secrets**. Treat external datasets and model downloads as a supply-chain concern. Review licenses and consent.
 
@@ -141,7 +141,7 @@ See [SECURITY.md](SECURITY.md) for threat model and production rollout checklist
 ## Project layout
 
 ```text
-src/klett_classifier/
+src/_classifier/
   api.py            FastAPI endpoints and guarded inference capacity
   security.py       Authentication, rate/body limits, unicode hygiene
   rules.py          Working deterministic fallback for demonstration
